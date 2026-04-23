@@ -1,11 +1,15 @@
 ﻿import Button from '../../components/Button.jsx';
+import AnoAI from '../../components/ui/animated-shader-background';
 
 const AboutPage = () => {
     return (
         <div className="flex w-full flex-col gap-6">
-            <section className="border-y-2 border-zinc-900 bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-                <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-                    <div className="rounded-3xl border-2 border-dashed border-zinc-300 bg-zinc-100 p-6">
+            <section className="relative overflow-hidden border-y-2 border-zinc-900 bg-black px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+                <div className="absolute inset-0 opacity-80">
+                    <AnoAI />
+                </div>
+                <div className="relative z-10 grid gap-8 lg:grid-cols-2 lg:items-center">
+                    <div className="rounded-3xl border-2 border-dashed border-zinc-700 bg-zinc-900/70 p-6">
                         <div className="flex min-h-72 items-center justify-center rounded-[1.25rem] bg-zinc-200">
                             <img
                                 src="/logo.jpg"
@@ -15,13 +19,13 @@ const AboutPage = () => {
                     </div>
 
                     <div>
-                        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
+                        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-300">
                             About Me
                         </p>
-                        <h1 className="max-w-xl text-3xl font-bold leading-tight text-zinc-900 sm:text-4xl">
+                        <h1 className="max-w-xl text-3xl font-bold leading-tight text-zinc-50 sm:text-4xl">
                             Passionate Developer and Designer Crafting Digital Solutions
                         </h1>
-                        <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-600 sm:text-base">
+                        <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-200 sm:text-base">
                             With a background in mobile and web development, I specialize in turning ideas into user-friendly products. From sustainable fashion apps to secure transportation systems, I focus on thoughtful design and clean code to create impactful experiences.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-3">

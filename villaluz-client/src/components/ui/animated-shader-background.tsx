@@ -1,26 +1,34 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { Infinity, Rocket, Shield, Brain, Play, ChevronDown } from 'lucide-react';
 
 const AnoAI = () => {
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // @ts-ignore
     const container = containerRef.current;
+    if (!container) return;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      powerPreference: 'high-performance',
+    });
     renderer.setClearColor(0x000000);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
     // @ts-ignore
     container.appendChild(renderer.domElement);
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
         iTime: { value: 0 },
-        iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        iResolution: {
+          value: new THREE.Vector2(
+            container.clientWidth || window.innerWidth,
+            container.clientHeight || window.innerHeight
+          )
+        }
       },
       vertexShader: `
         void main() {
@@ -96,7 +104,12 @@ const AnoAI = () => {
 
     // @ts-ignore
     let frameId;
+    let isActive = !document.hidden;
     const animate = () => {
+      if (!isActive) {
+        frameId = requestAnimationFrame(animate);
+        return;
+      }
       // @ts-ignore
       material.uniforms.iTime.value += 0.016;
       renderer.render(scene, camera);
@@ -105,16 +118,23 @@ const AnoAI = () => {
     animate();
 
     const handleResize = () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+      renderer.setSize(width, height);
       // @ts-ignore
-      material.uniforms.iResolution.value.set(window.innerWidth, window.innerHeight);
+      material.uniforms.iResolution.value.set(width, height);
+    };
+    const handleVisibilityChange = () => {
+      isActive = !document.hidden;
     };
     window.addEventListener('resize', handleResize);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       // @ts-ignore
       cancelAnimationFrame(frameId);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       // @ts-ignore
       container.removeChild(renderer.domElement);
       geometry.dispose();

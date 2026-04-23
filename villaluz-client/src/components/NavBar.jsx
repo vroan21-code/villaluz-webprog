@@ -1,5 +1,5 @@
 ﻿import { NavLink, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const links = [
     { label: 'Home', to: '/'},
@@ -20,6 +20,8 @@ const loginButtonClassName = 'rounded-full border-2 px-4 py-2 text-[11px] font-s
 
 const NavBar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const profileMenuRef = useRef(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -30,12 +32,26 @@ const NavBar = () => {
     const handleLogout = () => {
         localStorage.removeItem('isLoggedIn');
         setIsLoggedIn(false);
+        setIsProfileMenuOpen(false);
         navigate('/auth/signin');
     };
 
     const handleLogin = () => {
         navigate('/auth/signin');
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+                setIsProfileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <header className="fixed inset-x-0 top-0 z-50 border-b-2 border-zinc-900 bg-zinc-100/95 backdrop-blur">
@@ -59,9 +75,25 @@ const NavBar = () => {
 
                 <div className="flex items-center gap-2">
                     {isLoggedIn ? (
-                        <button onClick={handleLogout} className={authButtonClassName} title="Logout">
-                            <img src="/account.svg" alt="Account" className="h-6 w-6" />
-                        </button>
+                        <div className="relative" ref={profileMenuRef}>
+                            <button
+                                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                                className={authButtonClassName}
+                                title="Profile options"
+                            >
+                                <img src="/account.svg" alt="Account" className="h-6 w-6" />
+                            </button>
+                            {isProfileMenuOpen && (
+                                <div className="absolute right-0 mt-3 min-w-[8.5rem] rounded-xl border border-zinc-200/80 bg-white/90 p-1.5 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.35)] backdrop-blur-md">
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full rounded-lg px-2.5 py-2 text-left text-xs font-medium text-zinc-700 transition hover:bg-zinc-900 hover:text-zinc-50 active:scale-[0.99]"
+                                    >
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <button onClick={handleLogin} className={loginButtonClassName}>
                             Login
