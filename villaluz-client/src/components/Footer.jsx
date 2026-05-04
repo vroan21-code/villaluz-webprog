@@ -11,7 +11,7 @@ const Footer = () => {
                     </div>
                         <div className="flex space-x-4">
                             <Link to="/about" className="text-xs text-zinc-400 hover:text-zinc-100 transition-colors">About</Link>
-                            <a href="mailto:vroan21@gmail.com" className="text-xs text-zinc-400 hover:text-zinc-100 transition-colors">Facebook</a>
+                            <a href="mailto:vroan21@gmail.com" className="text-xs text-zinc-400 hover:text-zinc-100 transition-colors">Contact Me</a>
                             <a href="https://github.com/vroan21-code" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-400 hover:text-zinc-100 transition-colors">GitHub</a>
                         </div>
                 </div>

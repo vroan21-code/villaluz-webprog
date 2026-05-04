@@ -6,41 +6,23 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
+import Chip from '@mui/material/Chip';
 
 import { Gauge } from '@mui/x-charts/Gauge';
 import { Typography, Card, CardContent } from '@mui/material';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import usersSeed from '../../data/users.json';
+
 const columns = [
-  { field: 'id', headerName: 'ID', width: 90 },
-  {
-    field: 'firstName',
-    headerName: 'First name',
-    width: 150,
-    editable: true,
-  },
-  {
-    field: 'lastName',
-    headerName: 'Last name',
-    width: 150,
-    editable: true,
-  },
-  {
-    field: 'age',
-    headerName: 'Age',
-    type: 'number',
-    width: 110,
-    editable: true,
-  },
+  { field: 'id', headerName: 'ID', width: 72 },
   {
     field: 'fullName',
     headerName: 'User',
     sortable: false,
     minWidth: 220,
     flex: 1.2,
-    valueGetter: (value, row) =>
-      `${row.firstName || ''} ${row.lastName || ''}`,
     renderCell: (params) => {
       const label = params.value?.trim() || 'Unknown User';
       const initials = label
@@ -62,25 +44,43 @@ const columns = [
       );
     },
   },
+  { field: 'username', headerName: 'Username', minWidth: 130, flex: 0.8 },
+  {
+    field: 'age',
+    headerName: 'Age',
+    type: 'number',
+    width: 88,
+    valueGetter: (value, row) => row.age ?? null,
+  },
+  { field: 'gender', headerName: 'Gender', minWidth: 100, flex: 0.7 },
+  { field: 'role', headerName: 'Role', minWidth: 100, flex: 0.7 },
+  {
+    field: 'status',
+    headerName: 'Status',
+    minWidth: 110,
+    flex: 0.7,
+    renderCell: (params) =>
+      params.value === 'Active' ? (
+        <Chip label="Active" size="small" color="success" sx={{ fontWeight: 600 }} />
+      ) : (
+        <Chip
+          label="Inactive"
+          size="small"
+          variant="outlined"
+          sx={{ fontWeight: 600, borderColor: 'rgba(24,24,27,0.35)' }}
+        />
+      ),
+  },
 ];
 
-const rows = [
-  { id: 1, lastName: 'Villaluz', firstName: 'Roan', age: 14 },
-  { id: 2, lastName: 'Dela Cruz', firstName: 'Christiana Kyle', age: 31 },
-  { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 31 },
-  { id: 4, lastName: 'Stark', firstName: 'Arya', age: 11 },
-  { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
-  { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
-  { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
-  { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
-  { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
-];
+const rows = usersSeed.map((u) => ({ ...u }));
 
 function DashboardPage() {
-  const averageAge = (
-    rows.reduce((sum, row) => sum + (row.age || 0), 0) /
-    rows.filter((row) => row.age !== null).length
-  ).toFixed(1);
+  const ageKnown = rows.filter((row) => row.age !== null && row.age !== undefined);
+  const averageAge =
+    ageKnown.length > 0
+      ? (ageKnown.reduce((sum, row) => sum + Number(row.age), 0) / ageKnown.length).toFixed(1)
+      : '—';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -142,7 +142,10 @@ function DashboardPage() {
               Data Completeness
             </Typography>
             <Typography variant="h3" sx={{ fontWeight: 700 }}>
-              {Math.round((rows.filter((row) => row.age !== null).length / rows.length) * 100)}%
+              {rows.length > 0
+                ? Math.round((ageKnown.length / rows.length) * 100)
+                : 0}
+              %
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               Users with complete age data
@@ -225,7 +228,6 @@ function DashboardPage() {
           <DataGrid
             rows={rows}
             columns={columns}
-            experimentalFeatures={{ newEditingApi: true }}
             initialState={{
               pagination: {
                 paginationModel: {
@@ -234,7 +236,6 @@ function DashboardPage() {
               },
             }}
             pageSizeOptions={[5]}
-            checkboxSelection
             disableRowSelectionOnClick
             sx={{
               border: 0,

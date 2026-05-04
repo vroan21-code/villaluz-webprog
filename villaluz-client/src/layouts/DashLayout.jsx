@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, createElement } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { styled, useTheme, alpha } from "@mui/material/styles";
+import { ThemeProvider, createTheme, styled, useTheme, alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar from "@mui/material/AppBar";
@@ -24,7 +24,135 @@ import PeopleIcon from "@mui/icons-material/People";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import Button from "@mui/material/Button";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import ArticleIcon from "@mui/icons-material/Article";
+import HomeIcon from "@mui/icons-material/Home";
+
+const zinc950 = "#09090b";
+const zinc900 = "#18181b";
+const zinc800 = "#27272a";
+const zinc500 = "#71717a";
+const zinc200 = "#e4e4e7";
+const zinc100 = "#f4f4f5";
+const zinc50 = "#fafafa";
+
+const dashboardTheme = createTheme({
+  palette: {
+    mode: "light",
+    primary: {
+      main: zinc900,
+      dark: zinc950,
+      light: zinc800,
+      contrastText: zinc50,
+    },
+    background: {
+      default: zinc100,
+      paper: "#ffffff",
+    },
+    text: {
+      primary: zinc900,
+      secondary: zinc500,
+    },
+    divider: "rgba(24, 24, 27, 0.12)",
+    success: {
+      main: "#166534",
+      contrastText: zinc50,
+    },
+    warning: {
+      main: "#ea580c",
+      contrastText: zinc50,
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: { fontFamily: '"Sora", "Inter", sans-serif', fontWeight: 700 },
+    h5: { fontFamily: '"Sora", "Inter", sans-serif', fontWeight: 700 },
+    h6: { fontFamily: '"Sora", "Inter", sans-serif', fontWeight: 600 },
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: zinc100,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        containedPrimary: {
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+            backgroundColor: zinc800,
+          },
+        },
+        containedWarning: {
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+          },
+        },
+        containedSuccess: {
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+          },
+        },
+        outlinedPrimary: {
+          borderColor: zinc900,
+          "&:hover": {
+            borderColor: zinc800,
+            backgroundColor: "rgba(24, 24, 27, 0.04)",
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: zinc800,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.palette.primary.main,
+          },
+        }),
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          "&.Mui-selected": {
+            backgroundColor: "rgba(24, 24, 27, 0.08)",
+            "&:hover": {
+              backgroundColor: "rgba(24, 24, 27, 0.12)",
+            },
+          },
+        },
+      },
+    },
+    MuiDataGrid: {
+      styleOverrides: {
+        columnHeaders: {
+          backgroundColor: zinc200,
+          color: zinc900,
+          fontWeight: 600,
+        },
+        footerContainer: {
+          borderTopColor: "rgba(24, 24, 27, 0.12)",
+        },
+      },
+    },
+  },
+});
 
 const drawerWidth = 240;
 
@@ -158,7 +286,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 const getPageTitle = (pathname) =>
   dashboardNavItems.find(({ to }) => to === pathname)?.title ?? "Welcome";
 
-const DashLayout = () => {
+const DashLayoutContent = () => {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -178,110 +306,123 @@ const DashLayout = () => {
   };
 
   return (
-    <>
-      <Box sx={{ display: "flex" }}>
-        <CssBaseline />
-        {/* App Bar */}
-        {/* <AppBar position="fixed" open={open}> */}
-        <AppBar position="fixed">
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              // onClick={(open)}
-              onClick={open ? handleDrawerClose : handleDrawerOpen}
-              edge="start"
-              // sx={{ marginRight: 5, ...(open && { display: 'none' }) }}
-              sx={{ marginRight: 5 }}
-            >
-              {open ? <MenuOpenIcon /> : <MenuIcon />}
-            </IconButton>
+    <Box sx={{ display: "flex", bgcolor: "background.default", minHeight: "100vh" }}>
+      <CssBaseline />
+      {/* App Bar */}
+      <AppBar position="fixed">
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={open ? handleDrawerClose : handleDrawerOpen}
+            edge="start"
+            sx={{ marginRight: 5 }}
+          >
+            {open ? <MenuOpenIcon /> : <MenuIcon />}
+          </IconButton>
 
-            <Typography
-              variant="h6"
-              noWrap
-              component="div"
-              sx={{ flexGrow: 1 }}
-            >
-              {pageTitle}
-            </Typography>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            {pageTitle}
+          </Typography>
 
-            {/* Search */}
-            <Search>
-              <SearchIconWrapper>
-                <SearchIcon />
-              </SearchIconWrapper>
-              <StyledInputBase
-                placeholder="Search…"
-                inputProps={{ "aria-label": "search" }}
-              />
-            </Search>
+          <Search>
+            <SearchIconWrapper>
+              <SearchIcon />
+            </SearchIconWrapper>
+            <StyledInputBase
+              placeholder="Search…"
+              inputProps={{ "aria-label": "search" }}
+            />
+          </Search>
 
-            <Button
-              color="inherit"
-              variant="outlined"
-              onClick={handleLogout}
-              sx={{ borderColor: "rgba(255,255,255,0.45)", "&:hover": { borderColor: "#fff" } }}
-            >
-              Logout
-            </Button>
-          </Toolbar>
-        </AppBar>
-        {/* Drawer */}
-        <Drawer variant="permanent" open={open}>
-          <DrawerHeader>
-            <IconButton onClick={handleDrawerClose}>
-              {theme.direction === "rtl" ? (
-                <ChevronRightIcon />
-              ) : (
-                <ChevronLeftIcon />
-              )}
-            </IconButton>
-          </DrawerHeader>
-          <Divider />
+          <Button
+            color="inherit"
+            variant="outlined"
+            onClick={handleLogout}
+            sx={{ borderColor: "rgba(255,255,255,0.45)", "&:hover": { borderColor: "#fff" } }}
+          >
+            Logout
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-          {/* Drawer List */}
-          <List>
-            {dashboardNavItems.map(({ label, to, icon: Icon }) => (
-              <ListItem key={to} disablePadding sx={{ display: "block" }}>
-                <ListItemButton
-                  component={Link}
-                  to={to}
-                  selected={location.pathname === to}
+      <Drawer variant="permanent" open={open}>
+        <DrawerHeader>
+          <IconButton onClick={handleDrawerClose}>
+            {theme.direction === "rtl" ? (
+              <ChevronRightIcon />
+            ) : (
+              <ChevronLeftIcon />
+            )}
+          </IconButton>
+        </DrawerHeader>
+        <Divider />
+
+        <List>
+          {dashboardNavItems.map(({ label, to, icon }) => (
+            <ListItem key={to} disablePadding sx={{ display: "block" }}>
+              <ListItemButton
+                component={Link}
+                to={to}
+                selected={location.pathname === to}
+                sx={{
+                  minHeight: 48,
+                  px: 2.5,
+                  justifyContent: open ? "initial" : "center",
+                }}
+              >
+                <ListItemIcon
                   sx={{
-                    minHeight: 48,
-                    px: 2.5,
-                    justifyContent: open ? "initial" : "center",
+                    minWidth: 0,
+                    mr: open ? 3 : "auto",
+                    justifyContent: "center",
                   }}
                 >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: open ? 3 : "auto",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Icon />
-                  </ListItemIcon>
+                  {createElement(icon)}
+                </ListItemIcon>
 
-                  <ListItemText
-                    primary={label}
-                    sx={{ opacity: open ? 1 : 0 }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
-
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          <DrawerHeader />
-          {/* Content */}
-          <Outlet />
+                <ListItemText primary={label} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Box sx={{ mt: "auto", p: 1.5 }}>
+          <ListItemButton
+            component={Link}
+            to="/"
+            sx={{
+              minHeight: 48,
+              borderRadius: 1.5,
+              px: 2.5,
+              justifyContent: open ? "initial" : "center",
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                mr: open ? 3 : "auto",
+                justifyContent: "center",
+              }}
+            >
+              <HomeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Back to Home" sx={{ opacity: open ? 1 : 0 }} />
+          </ListItemButton>
         </Box>
+      </Drawer>
+
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <DrawerHeader />
+        <Outlet />
       </Box>
-    </>
+    </Box>
   );
 };
+
+const DashLayout = () => (
+  <ThemeProvider theme={dashboardTheme}>
+    <DashLayoutContent />
+  </ThemeProvider>
+);
 
 export default DashLayout;

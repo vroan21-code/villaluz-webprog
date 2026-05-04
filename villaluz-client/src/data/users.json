@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "fullName": "Roan Villaluz",
+    "username": "roanvillaluz",
+    "age": 21,
+    "gender": "Male",
+    "contactNumber": "09171234567",
+    "email": "vroan21@gmail.com",
+    "role": "Admin",
+    "status": "Active"
+  },
+  {
+    "id": 2,
+    "fullName": "Christiana Kyle Dela Cruz",
+    "username": "christianakyle",
+    "age": 34,
+    "gender": "Female",
+    "contactNumber": "09189876543",
+    "email": "ckdelacruz@gmail.com",
+    "role": "Viewer",
+    "status": "Active"
+  },
+  {
+    "id": 3,
+    "fullName": "Ahldrin Alarcon",
+    "username": "ahldrinalarcon",
+    "age": 26,
+    "gender": "Male",
+    "contactNumber": "09165550123",
+    "email": "aalarcon@gmail.com",
+    "role": "Editor",
+    "status": "Inactive"
+  },
+  {
+    "id": 4,
+    "fullName": "Danrome Beltran",
+    "username": "danromebeltran",
+    "age": 31,
+    "gender": "Male",
+    "contactNumber": "09173336677",
+    "email": "dabeltran@gmail.com",
+    "role": "Admin",
+    "status": "Active"
+  },
+  {
+    "id": 5,
+    "fullName": "Denver Mananghaya",
+    "username": "denvermananghaya",
+    "age": 29,
+    "gender": "Male",
+    "contactNumber": "09192224488",
+    "email": "dmananghaya@gmail.com",
+    "role": "Viewer",
+    "status": "Inactive"
+  },
+  {
+    "id": 6,
+    "fullName": "John Carlo Ocray",
+    "username": "johnocray",
+    "age": 33,
+    "gender": "Male",
+    "contactNumber": "09178889900",
+    "email": "jocray@gmail.com",
+    "role": "Editor",
+    "status": "Active"
+  }
+]
