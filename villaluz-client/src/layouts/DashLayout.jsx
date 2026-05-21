@@ -22,9 +22,11 @@ import ListItemText from "@mui/material/ListItemText";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import ArticleIcon from "@mui/icons-material/Article";
 import Button from "@mui/material/Button";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import HomeIcon from "@mui/icons-material/Home";
+import { canAccessUsersPage, clearAuthSession, getAuthUser } from "../utils/auth";
 
 const zinc950 = "#09090b";
 const zinc900 = "#18181b";
@@ -174,6 +176,13 @@ const dashboardNavItems = [
         title: "Users",
         to: "/dashboard/users",
         icon: PeopleIcon,
+        adminOnly: true,
+    },
+    {
+        label: "Articles",
+        title: "Articles",
+        to: "/dashboard/articles",
+        icon: ArticleIcon,
     },
 ];
 
@@ -292,6 +301,13 @@ const DashLayoutContent = () => {
   const location = useLocation();
   const pageTitle = getPageTitle(location.pathname);
   const navigate = useNavigate();
+  const { firstName, type: userType } = getAuthUser();
+  const roleLabel =
+    userType === "admin" ? "Admin" : userType === "editor" ? "Editor" : userType || "";
+
+  const visibleNavItems = dashboardNavItems.filter(
+    (item) => !item.adminOnly || canAccessUsersPage()
+  );
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -302,7 +318,8 @@ const DashLayoutContent = () => {
   };
 
   const handleLogout = () => {
-    navigate("/");
+    clearAuthSession();
+    navigate("/auth/signin");
   };
 
   return (
@@ -323,6 +340,12 @@ const DashLayoutContent = () => {
 
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {pageTitle}
+            {firstName && (
+              <Typography component="span" variant="body2" sx={{ ml: 1.5, opacity: 0.75 }}>
+                · {firstName}
+                {roleLabel ? ` (${roleLabel})` : ""}
+              </Typography>
+            )}
           </Typography>
 
           <Search>
@@ -359,7 +382,7 @@ const DashLayoutContent = () => {
         <Divider />
 
         <List>
-          {dashboardNavItems.map(({ label, to, icon }) => (
+          {visibleNavItems.map(({ label, to, icon }) => (
             <ListItem key={to} disablePadding sx={{ display: "block" }}>
               <ListItemButton
                 component={Link}

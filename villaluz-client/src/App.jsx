@@ -10,6 +10,7 @@ import AboutPage from './pages/LandingPages/AboutPage';
 import DashboardPage from './pages/DashboardPages/DashboardPage';
 import ReportsPage from './pages/DashboardPages/ReportsPage';
 import UsersPage from './pages/DashboardPages/UsersPage';
+import ArticlesPage from './pages/DashboardPages/ArticlesPage';
 import DashLayout from './layouts/DashLayout';
 
 
@@ -18,6 +19,7 @@ import SignInPage from './pages/AuthPages/SignInPage';
 import SignUpPage from './pages/AuthPages/SignUpPage';
 
 import NotFoundPage from './pages/NotFoundPage';
+import RequireAuth from './components/RequireAuth';
 
 const routes = [
   {
@@ -64,7 +66,11 @@ const routes = [
   },
   {
     path: "/dashboard",
-    element: <DashLayout />,
+    element: (
+      <RequireAuth>
+        <DashLayout />
+      </RequireAuth>
+    ),
     errorElement: <NotFoundPage />,
     children: [
       {
@@ -77,7 +83,15 @@ const routes = [
       },
       {
         path: "users",
-        element: <UsersPage />
+        element: (
+          <RequireAuth adminOnly>
+            <UsersPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "articles",
+        element: <ArticlesPage />
       }
     ],
   },

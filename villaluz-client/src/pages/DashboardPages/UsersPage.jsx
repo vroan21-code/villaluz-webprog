@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -15,10 +15,12 @@ import {
   Stack,
   TextField,
   Typography,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-import usersSeed from "../../data/users.json";
+import { fetchUsers, createUser, updateUser } from "../../services/userService";
 
 const ROLE_OPTIONS = ["Admin", "Viewer", "Editor"];
 const GENDER_OPTIONS = ["Female", "Male"];
@@ -30,6 +32,34 @@ const emptyFormErrors = () => ({
   age: "",
   password: "",
 });
+
+/** Map backend type to frontend role label */
+function typeToRole(type) {
+  if (!type) return "Viewer";
+  const map = { admin: "Admin", editor: "Editor", viewer: "Viewer" };
+  return map[type.toLowerCase()] || "Viewer";
+}
+
+/** Map frontend role label to backend type */
+function roleToType(role) {
+  const map = { Admin: "admin", Editor: "editor", Viewer: "viewer" };
+  return map[role] || "viewer";
+}
+
+/** Transform a backend user document into a frontend row */
+function toRow(user) {
+  return {
+    id: user._id,
+    fullName: [user.firstName, user.lastName].filter(Boolean).join(" "),
+    username: user.username,
+    age: user.age != null ? Number(user.age) : "",
+    gender: user.gender || "Male",
+    contactNumber: user.contactNumber || "",
+    email: user.email || "",
+    role: typeToRole(user.type),
+    status: user.isActive ? "Active" : "Inactive",
+  };
+}
 
 /** Returns error map; empty object means valid. */
 function validateUserForm(form, { isEdit }) {
@@ -91,9 +121,9 @@ function matchesSearch(row, q) {
 }
 
 const UsersPage = () => {
-  const [rows, setRows] = useState(() =>
-    usersSeed.map((u) => ({ ...u }))
-  );
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
@@ -101,6 +131,7 @@ const UsersPage = () => {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     username: "",
@@ -113,6 +144,26 @@ const UsersPage = () => {
     status: "Active",
   });
   const [formErrors, setFormErrors] = useState(emptyFormErrors);
+
+  // Fetch users from the database on mount
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetchUsers();
+      const users = response.data.users || response.data;
+      setRows(Array.isArray(users) ? users.map(toRow) : []);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+      setError("Failed to load users. Make sure the server is running.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -162,9 +213,33 @@ const UsersPage = () => {
     setFormErrors(emptyFormErrors());
   };
 
-  const saveUser = () => {
-    const ageNum = parseInt(form.age.trim(), 10);
+  /** Build the payload that matches the backend User model */
+  function buildPayload() {
+    const nameParts = form.fullName.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || firstName; // fallback if single name
 
+    const payload = {
+      firstName,
+      lastName,
+      username: form.username.trim().toLowerCase(),
+      age: form.age.trim(),
+      gender: form.gender,
+      contactNumber: form.contactNumber.replace(/\D/g, ""),
+      email: form.email.trim(),
+      type: roleToType(form.role),
+      isActive: form.status === "Active",
+      address: "N/A", // required field in schema — use placeholder
+    };
+
+    if (form.password) {
+      payload.password = form.password;
+    }
+
+    return payload;
+  }
+
+  const saveUser = async () => {
     const fieldErrors = validateUserForm(form, { isEdit: editingId != null });
     if (Object.keys(fieldErrors).length > 0) {
       setFormErrors(fieldErrors);
@@ -172,74 +247,62 @@ const UsersPage = () => {
     }
     setFormErrors(emptyFormErrors());
 
-    if (editingId != null) {
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === editingId
-            ? {
-                ...r,
-                fullName: form.fullName.trim(),
-                username: form.username.trim().toLowerCase(),
-                age: ageNum,
-                gender: form.gender,
-                contactNumber: form.contactNumber.replace(/\D/g, ""),
-                email: form.email.trim(),
-                role: form.role,
-                status: form.status,
-              }
-            : r
-        )
-      );
-    } else {
-      const nextId = rows.reduce((m, r) => Math.max(m, r.id), 0) + 1;
-      setRows((prev) => [
-        ...prev,
-        {
-          id: nextId,
-          fullName: form.fullName.trim(),
-          username: form.username.trim().toLowerCase(),
-          age: ageNum,
-          gender: form.gender,
-          contactNumber: form.contactNumber.replace(/\D/g, ""),
-          email: form.email.trim(),
-          role: form.role,
-          status: form.status,
-        },
-      ]);
+    const payload = buildPayload();
+
+    try {
+      setSaving(true);
+      if (editingId != null) {
+        await updateUser(editingId, payload);
+      } else {
+        await createUser(payload);
+      }
+      closeDialog();
+      // Refresh the list from the database
+      await loadUsers();
+    } catch (err) {
+      console.error("Failed to save user:", err);
+      const msg =
+        err.response?.data?.message || "Failed to save user. Please try again.";
+      setError(msg);
+    } finally {
+      setSaving(false);
     }
-    closeDialog();
   };
 
-  const toggleActive = useCallback((id) => {
-    setRows((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, status: r.status === "Active" ? "Inactive" : "Active" }
-          : r
-      )
-    );
-  }, []);
+  const toggleActive = useCallback(
+    async (id) => {
+      const row = rows.find((r) => r.id === id);
+      if (!row) return;
+      const newIsActive = row.status !== "Active";
+      try {
+        await updateUser(id, { isActive: newIsActive });
+        await loadUsers();
+      } catch (err) {
+        console.error("Failed to toggle user status:", err);
+        setError("Failed to update user status.");
+      }
+    },
+    [rows, loadUsers]
+  );
 
   const columns = useMemo(
     () => [
-      { field: "id", headerName: "ID", width: 72 },
-      { field: "fullName", headerName: "Full Name", minWidth: 160, flex: 1 },
-      { field: "username", headerName: "Username", minWidth: 130, flex: 0.8 },
-      { field: "age", headerName: "Age", type: "number", width: 88 },
-      { field: "gender", headerName: "Gender", minWidth: 100, flex: 0.6 },
+      { field: "id", headerName: "ID", flex: 0.8 },
+      { field: "fullName", headerName: "Full Name", flex: 1.2 },
+      { field: "username", headerName: "Username", flex: 1 },
+      { field: "age", headerName: "Age", type: "number", flex: 0.4 },
+      { field: "gender", headerName: "Gender", flex: 0.6 },
       {
         field: "contactNumber",
-        headerName: "Contact Number",
-        minWidth: 130,
+        headerName: "Contact",
         flex: 0.9,
       },
-      { field: "email", headerName: "Email", minWidth: 200, flex: 1.1 },
-      { field: "role", headerName: "Role", minWidth: 100, flex: 0.7 },
+      { field: "email", headerName: "Email", flex: 1.2 },
+      { field: "role", headerName: "Role", flex: 0.6 },
       {
         field: "status",
         headerName: "Status",
-        minWidth: 110,
-        flex: 0.7,
+        flex: 0.6,
         renderCell: (params) =>
           params.value === "Active" ? (
             <Chip label="Active" size="small" color="success" sx={{ fontWeight: 600 }} />
@@ -262,7 +325,7 @@ const UsersPage = () => {
         headerName: "Actions",
         sortable: false,
         filterable: false,
-        width: 236,
+        flex: 1.2,
         renderCell: (params) => (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 0.5 }}>
             <Button
@@ -347,6 +410,12 @@ const UsersPage = () => {
         </Stack>
       </Paper>
 
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
@@ -419,21 +488,27 @@ const UsersPage = () => {
           bgcolor: "background.paper",
         }}
       >
-        <Box sx={{ width: "100%", height: 520 }}>
-          <DataGrid
-            rows={filteredRows}
-            columns={columns}
-            pageSizeOptions={[5, 10]}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 5, page: 0 } },
-            }}
-            disableRowSelectionOnClick
-            sx={{
-              border: 0,
-              color: "text.primary",
-              "& .MuiDataGrid-cell": { borderColor: "divider" },
-            }}
-          />
+        <Box sx={{ width: "100%", height: 520, overflow: "hidden" }}>
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <DataGrid
+              rows={filteredRows}
+              columns={columns}
+              pageSizeOptions={[5, 10]}
+              initialState={{
+                pagination: { paginationModel: { pageSize: 5, page: 0 } },
+              }}
+              disableRowSelectionOnClick
+              sx={{
+                border: 0,
+                color: "text.primary",
+                "& .MuiDataGrid-cell": { borderColor: "divider" },
+              }}
+            />
+          )}
         </Box>
       </Paper>
 
@@ -599,8 +674,8 @@ const UsersPage = () => {
           <Button onClick={closeDialog} sx={{ color: "text.secondary" }}>
             Cancel
           </Button>
-          <Button variant="contained" color="primary" onClick={saveUser}>
-            Save
+          <Button variant="contained" color="primary" onClick={saveUser} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

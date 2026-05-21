@@ -1,5 +1,6 @@
-﻿import { NavLink, useNavigate } from 'react-router-dom';
+﻿import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { clearAuthSession, isAuthenticated } from '../utils/auth';
 
 const links = [
     { label: 'Home', to: '/'},
@@ -20,14 +21,19 @@ const loginButtonClassName = 'rounded-full border-2 px-4 py-2 text-[11px] font-s
 
 const NavBar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(
-        () => typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
+        () => typeof window !== 'undefined' && isAuthenticated()
     );
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const profileMenuRef = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        setIsLoggedIn(isAuthenticated());
+    }, [location.pathname]);
 
     const handleLogout = () => {
-        localStorage.removeItem('isLoggedIn');
+        clearAuthSession();
         setIsLoggedIn(false);
         setIsProfileMenuOpen(false);
         navigate('/auth/signin');
