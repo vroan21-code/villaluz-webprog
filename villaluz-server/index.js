@@ -11,9 +11,6 @@ const articleRoutes = require('./routes/articleRoutes');
 
 const app = express();
 
-// Database Connection
-connectDB();
-
 app.use(express.json());
 
 // Middleware
@@ -46,6 +43,24 @@ app.use((req, res, next) => {
 
 // Uploaded article images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.get('/api/health', (req, res) => {
+	res.json({ ok: true, message: 'API is running' });
+});
+
+// Connect to MongoDB before API routes (required for Vercel serverless)
+app.use('/api', async (req, res, next) => {
+	try {
+		await connectDB();
+		next();
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({
+			message: 'Database connection failed',
+			hint: 'Check MONGO_URI in Vercel Environment Variables and Atlas Network Access (0.0.0.0/0).',
+		});
+	}
+});
 
 // Routes
 app.use('/api/users', userRoutes);
