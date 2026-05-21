@@ -11,6 +11,18 @@ const articleRoutes = require('./routes/articleRoutes');
 
 const app = express();
 
+// Root URL (professor shows "Cannot GET /" — that means the server is running)
+app.get('/', (req, res) => {
+	res.status(404).send('Cannot GET /');
+});
+
+app.get('/api', (req, res) => {
+	res.json({
+		message: 'Villaluz API',
+		endpoints: ['/api/health', '/api/users', '/api/articles', '/api/users/login'],
+	});
+});
+
 app.use(express.json());
 
 // Middleware
@@ -44,12 +56,20 @@ app.use((req, res, next) => {
 // Uploaded article images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.get('/api/health', (req, res) => {
-	res.json({ ok: true, message: 'API is running' });
+app.get('/api/health', async (req, res) => {
+	try {
+		await connectDB();
+		res.json({ ok: true, message: 'API is running', database: 'connected' });
+	} catch (error) {
+		res.status(500).json({ ok: false, message: error.message });
+	}
 });
 
-// Connect to MongoDB before API routes (required for Vercel serverless)
+// Connect to MongoDB before data API routes (required for Vercel serverless)
 app.use('/api', async (req, res, next) => {
+	if (req.path === '/health') {
+		return next();
+	}
 	try {
 		await connectDB();
 		next();

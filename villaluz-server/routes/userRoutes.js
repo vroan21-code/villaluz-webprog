@@ -6,7 +6,8 @@ const router = express.Router();
 
 router.post('/login', loginUser);
 
-router.get('/', requireAuth, requireAdmin, getUsers);
+// Public read (same as typical class demo: /api/users works in the browser)
+router.get('/', getUsers);
 router.post('/', requireAuth, requireAdmin, createUser);
 router.put('/:id', requireAuth, requireAdmin, updateUser);
 router.delete('/:id', requireAuth, requireAdmin, deleteUser);

@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 
 const requireAuth = (req, res, next) => {
+	if (!process.env.JWT_SECRET) {
+		return res.status(500).json({ message: 'JWT_SECRET is not configured on the server' });
+	}
 	const header = req.headers.authorization;
 	if (!header?.startsWith('Bearer ')) {
 		return res.status(401).json({ message: 'Unauthorized' });
